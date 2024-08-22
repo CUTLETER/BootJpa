@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .pagination li {
+            margin: 0 5px;
+        }
+
+        .pagination a {
+            display: block;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: #007bff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .pagination a.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .pagination a:hover {
+            background-color: #ddd;
+        }
+    </style>
+
+</head>
+<body>
+
+    <select name="searchType">
+        <option value="mno">번호</option>
+        <option value="text">내용</option>
+        <option value="writer">작성자</option>
+        <option value="textWriter">내용 + 작성자</option>
+    </select>
+    <input type="text" name="searchName">
+    <button type="button" onclick="searchList()">검색</button>
+
+    <table>
+        <thead>
+        <tr>
+            <th>MNO</th>
+            <th>Writer</th>
+            <th>Text</th>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Sign Date</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody">
+        <!-- Rows will be inserted here by JavaScript -->
+        </tbody>
+    </table>
+
+    <ul class="pagination" id="pagination">
+        <!-- Pagination buttons will be inserted here by JavaScript -->
+    </ul>
+
+    <script>
+        var pagination = document.getElementById("pagination");
+        var page = 1;
+        var amount = 10;
+        var start = 0; // 페이지네이션 시작
+        var end = 0; // 페이지네이션 끝
+
+        // 데이터 ajax 요청
+        function getList() {
+            var searchType = document.querySelector("select[name=searchType]").value;
+            var searchName = document.querySelector("input[name=searchName]").value; // getList 실행될 때마다 searchName 초기화 돼야 해서 getList() 안에다 선언함
+
+            //var url = "/getList?page="+page+"&amount="+amount+"&searchName="+searchName;
+            var url = "/getList2?page="+page+"&amount="+amount+"&searchName="+searchName+"&searchType="+searchType;
+            fetch(url).then(function (response) {
+                return response.json();
+            }).then(function (data) { // 응답이 돌아오는 곳
+                console.log(data);
+                createBody(data.pageData); // 내용 생성 함수 호출
+                createPage(data); //페이지네이션 생성 함수 호출
+            })
+        }
+
+        // 내용 생성 함수
+        function createBody(list) {
+            var tableBody = document.getElementById("tableBody");
+
+            var str = "";
+            list.forEach(function (data) { // 반복 돌려서 데이터 넣어줌
+                console.log(data);
+
+                str += "<tr>"; // 1행
+                str += "<td>" + data.mno + "</td>"; // 1열
+                str += "<td>" + data.writer + "</td>";
+                str += "<td>" + data.text + "</td>";
+                str += "<td>" + data.id + "</td>";
+                str += "<td>" + data.name + "</td>";
+                str += "<td>" + data.signDate + "</td>";
+                str += "</tr>";
+            })
+
+            tableBody.innerHTML = str; // tbody 밑에 추가!
+        }
+
+        // 페이지네이션 생성 함수
+        function createPage(item) {
+            console.log(item);
+
+            var pageList = item.pageList; // 페이지네이션값
+            var next = item.next; // 다음버튼
+            var prev = item.prev; // 이전버튼
+            start = item.start; // 페이지네이션 시작
+            end = item.end; // 페이지네이션 끝
+
+            var str = "";
+
+            // 이전 버튼 - 누르면 getList() 호출 시켜서 새 데이터 출력시켜야 함 - 버튼에 직접 걸거나(onclick) 이벤트 위임 받는 방식으로 (페이지네이션은 화면에서 뒤늦게 생성되는 태그라서)
+            if(prev) {
+                str += "<a href='#' class='prev'>이전</a>";
+            }
+
+            // 페이지네이션 - 누르면 getList() 호출 시켜서 새 데이터 출력시켜야 함 - 버튼에 직접 걸거나(onclick) 이벤트 위임 받는 방식으로 (페이지네이션은 화면에서 뒤늦게 생성되는 태그라서)
+            pageList.forEach(function (data) {
+                str += "<a href ='#' class='number'>"+data+"</a>";
+            })
+
+            // 다음 버튼 - 누르면 getList() 호출 시켜서 새 데이터 출력시켜야 함 - 버튼에 직접 걸거나(onclick) 이벤트 위임 받는 방식으로 (페이지네이션은 화면에서 뒤늦게 생성되는 태그라서)
+            if(next) {
+                str += "<a href='#' class='next'>다음</a>";
+            }
+
+
+            pagination.innerHTML = str;
+        }
+
+        // 페이지네이션 이벤트
+        // 이벤트 위임 방식으로
+        pagination.addEventListener('click', function(e) {
+
+            e.preventDefault(); //a이벤트 중단
+            if(e.target.className == 'pagination' ) return; // 부모인 pagenation클릭 시 함수 종료
+
+            if(e.target.className == 'prev') { //이전버튼
+                page = start - 1;
+            } else if(e.target.className == 'next') { //다음버튼
+                page = end + 1;
+            } else if(e.target.className == 'number') { //페이지번호
+                page = e.target.innerHTML; //a태그 사이값을 전역변수 저장
+            }
+            getList(); // 데이터 조회 메소드 호출
+        });
+
+        // 검색 기능 - 검색을 한다는 것은 다시 첫 페이지로 돌아간다는 의미
+        function searchList() {
+            page = 1;
+            amount = 10;
+            getList();
+        }
+
+        // 즉시 실행 함수
+        (function () {
+            getList(); // 데이터 요청 호출
+        })();
+    </script>
+
+</body>
+</html>

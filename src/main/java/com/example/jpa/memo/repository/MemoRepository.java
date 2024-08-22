@@ -1,18 +1,21 @@
 package com.example.jpa.memo.repository;
 
+import com.example.jpa.entity.MemberMemoDTO;
 import com.example.jpa.entity.Memo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 public interface MemoRepository extends JpaRepository<Memo, Long>,  // <Entity 타입, ID 타입>
-                                        MemoCustomRepository { // 커스텀 레퍼지토리 (새로 추가됨)
+                                        MemoCustomRepository, // 커스텀 레퍼지토리 (새로 추가됨)
+                                        QuerydslPredicateExecutor<Memo> { // 쿼리 DSL에서 제공되는 몇몇 함수들을 제공하는 인터페이스 (새로 추가됨)
     // JpaRepository로부터 추상 메소드 자동 상속 받음
     // 당분간은 서버를 실행시키지 않고 testcode로만 띄울 예정
 
@@ -87,5 +90,16 @@ public interface MemoRepository extends JpaRepository<Memo, Long>,  // <Entity �
     @Query(value = "select * from memo where mno = ?", nativeQuery = true)
     Memo getNative(Long mno);
 
+    // 구현체 만드는 구문은 인터페이스에서 이렇게 호출하는 것과 동일함
+    // MemoCustomRepositoryImle 에서
+    // public List<Memo> mtoJoin1(Long mno) - 이걸 만들지 않아도 된단 소리
+    //@Query("select m from Memo m inner join m.member x where m.mno >= :a")
+    //List<Memo> mtoJoin1(@Param("a") long a);
+
+    @Query(value = "select new com.example.jpa.entity.MemberMemoDTO(x.id, x.name, x.signDate, m.mno, m.writer, m.text) " +
+            "from Memo m left join m.member x where m.text like %:text%"
+            ,countQuery = "select count(m) from Memo m left join m.member x where m.text like %:text%"
+    )
+    Page<MemberMemoDTO> joinPage(@Param("text") String text, Pageable pageable);
 
 }

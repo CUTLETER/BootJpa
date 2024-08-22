@@ -30,8 +30,14 @@ public class Memo {
 
     // N:1
     // FK 컬럼명을 명시하지 않으면 Member 엔터티에 member_Pk로 자동 생성됨
+    //@ManyToOne (fetch = FetchType.LAZY) // 기본 방식은 Eager
+    //@JoinColumn(name = "member_id") // Member 엔터티의 PK를 member_id 컬럼에 저장시킴
+    //private Member member; //멤버 엔터티
+
+    // 양방향 맵핑
     @ManyToOne
-    @JoinColumn(name = "member_id") // Member 엔터티의 PK를 member_id 컬럼에 저장시킴
-    private Member member; //멤버 엔터티
+    @JoinColumn(name = "member_id")
+    private Member member;
+
 
 } // sql문을 따로 적지 않았음에도 서버 실행과 동시에 memo 테이블이 자동으로 생성됨
